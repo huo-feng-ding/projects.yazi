@@ -321,6 +321,20 @@ local delete_project = ya.sync(function(state, idx)
     end
 end)
 
+local save_last_and_quit = ya.sync(function(state)
+    local projects = _get_projects()
+    local current_project = _get_current_project()
+    projects.last = current_project
+
+    _save_projects(projects)
+
+    if state.event.save.enable then
+        ps.pub_to(0, state.event.save.name, current_project)
+    end
+
+    ya.emit("quit", {})
+end)
+
 local merge_project = ya.sync(function(state, opt)
     local project = _get_current_project()
     project.opt = opt or "all"
@@ -573,6 +587,11 @@ return {
     entry = function(_, job)
         local action = job.args[1]
         if not action then
+            return
+        end
+
+        if action == "quit" then
+            save_last_and_quit()
             return
         end
 
